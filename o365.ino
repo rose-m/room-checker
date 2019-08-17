@@ -1,7 +1,5 @@
-#include <EEPROM.h>
-#include <ArduinoJson.h>
 
-#include "http.h"
+O365CalendarEvent __o365CalendarEvent;
 
 // Static OAuth Configuration Data
 struct OAuthData {
@@ -12,14 +10,20 @@ struct OAuthData {
 } o365_auth;
 
 // Base URL for requests
-String graphBaseUrl = "https://graph.microsoftonline.com";
+String graphBaseUrl = "https://graph.microsoft.com/v1.0/";
 
 // OAuth token to use - populated by refresh
 String token;
 
+// Workday times - HH:mm
+String workDayStart = "08:00";
+String workDayEnd = "20:00";
+String maxEvents = "2";
+
+
 // Static computation for /events JSON Body
 size_t eventsBodyCapacity = JSON_ARRAY_SIZE(1) + 2*JSON_OBJECT_SIZE(1) + JSON_OBJECT_SIZE(3) + 200;
-StaticJsonDocument eventsBodyDoc(eventsBodyCapacity);
+DynamicJsonDocument eventsBodyDoc(eventsBodyCapacity);
 
 void o365_init() {
   EEPROM.begin(sizeof(o365_auth));
@@ -70,20 +74,45 @@ void o365_refresh_token() {
   }
 }
 
-void o365_get_events() {
+O365CalendarEvent* o365_get_events(String currentDate) {
   String headers[3][2] = {
-    { "Authorization", "Bearer " + token },
+    { "Authorization", "Bearer " + String(token) },
     { "Content-Type", "application/json" },
-    { "Prefer", "outlook.timezone='Europe/Berlin'" }
+    { "Prefer", "outlook.timezone=\"Europe/Berlin\"" }
   };
 
+  String baseUrl = graphBaseUrl + "users/" + String(o365_auth.resourceId) + "/calendar/events";
   
+  // Query-parameters: https://docs.microsoft.com/en-us/graph/query-parameters
+  String query = "$select=start,end,organizer" + 
+                  String("&$orderby=start/dateTime%20asc") + 
+                  "&$top=" + maxEvents +
+                  "&$filter=start/dateTime%20ge%20'" + currentDate + "T" + workDayStart + "'%20and%20end/dateTime%20lt%20'" + currentDate + "T"+ workDayEnd + "'";
 
-  deserializeJson(doc, response->body);
-  token = doc["access_token"].as<String>();
-  Serial.println("[O365] Got token: " + token);
+  String APIUrl = baseUrl + String("?") + query;
   
-//  http_post();
+  HttpResponse* response;
+  response = http_get(APIUrl, headers, 3);
+
+  if (response->code == 200) {
+    const size_t capacity = JSON_ARRAY_SIZE(2) + 2*JSON_OBJECT_SIZE(1) + 6*JSON_OBJECT_SIZE(2) + JSON_OBJECT_SIZE(3) + 2*JSON_OBJECT_SIZE(5) + 1390 + 50;
+    DynamicJsonDocument doc(capacity);
+
+    deserializeJson(doc, response->body);
+    JsonArray meetings = doc["value"];
+    uint8_t len = meetings.size();
+    Serial.println("[O365] Found " + String(len) + " meetings today");
+    if (len > 0 ) {
+      JsonObject meeting_0 = doc["value"][0];
+      __o365CalendarEvent.startTime = __split_value(meeting_0["start"]["dateTime"].as<String>(), 'T', 1);
+      __o365CalendarEvent.endTime = __split_value(meeting_0["end"]["dateTime"].as<String>(), 'T', 1);
+      __o365CalendarEvent.organiser = meeting_0["organizer"]["emailAddress"]["name"].as<String>();
+      Serial.println("[O365] First meeting " + String(__o365CalendarEvent.startTime) + " to " + String(__o365CalendarEvent.endTime) + " organised by " + String(__o365CalendarEvent.organiser));
+    }
+  } else {
+    Serial.println("[O365] Failed to accquire meeting update...");
+  }
+  return &__o365CalendarEvent;
 }
 
 void __print_auth_configuration() {
@@ -107,4 +136,20 @@ void __read_from_serial(String prompt, char* ptr, uint8_t len) {
   String data;
   data = Serial.readStringUntil('\n');
   data.toCharArray(ptr, len + 1);
+}
+
+String __split_value(String data, char separator, int index)
+{
+    int found = 0;
+    int strIndex[] = { 0, -1 };
+    int maxIndex = data.length() - 1;
+
+    for (int i = 0; i <= maxIndex && found <= index; i++) {
+        if (data.charAt(i) == separator || i == maxIndex) {
+            found++;
+            strIndex[0] = strIndex[1] + 1;
+            strIndex[1] = (i == maxIndex) ? i+1 : i;
+        }
+    }
+    return found > index ? data.substring(strIndex[0], strIndex[1]) : "";
 }
