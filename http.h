@@ -11,4 +11,7 @@ struct HttpResponse {
   String body;
 };
 
+HttpResponse* http_get(String url, String headers[][2] = NULL, uint8_t len = 0);
+HttpResponse* http_post(String url, String body, String headers[][2] = NULL, uint8_t len = 0);
+
 #endif

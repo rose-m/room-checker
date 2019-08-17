@@ -1,12 +1,16 @@
 
 HttpResponse __response;
 
-HttpResponse* http_get(String url) {
+HttpResponse* http_get(String url, String headers[][2], uint8_t len) {
   WiFiClientSecure client = wifi_client();
   HTTPClient https;
 
   Serial.println("[HTTP] GET " + url + "...");
   if (https.begin(client, url)) {
+    for (uint8_t i = 0; i < len; i++) {
+      String *h = headers[i];
+      https.addHeader(h[0], h[1]);
+    }
     __response.code = https.GET();
     Serial.println("[HTTP] GET " + url + " - " + __response.code);
 
@@ -23,7 +27,7 @@ HttpResponse* http_get(String url) {
   return &__response;
 }
 
-HttpResponse* http_post(String url, String body, String headers[][2] = NULL, uint8_t len = 0) {
+HttpResponse* http_post(String url, String body, String headers[][2], uint8_t len) {
   WiFiClientSecure client = wifi_client();
   HTTPClient https;
 
