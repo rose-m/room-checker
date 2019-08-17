@@ -1,6 +1,7 @@
 #include <LiquidCrystal_I2C.h>
 
 #include "http.h"
+#include "o365.h"
 
 /* ==================== */
 /* LCD Constants */
@@ -15,7 +16,7 @@ LiquidCrystal_I2C lcd(LCD_ADDRESS, LCD_COLS, LCD_ROWS);
 
 /* ==================== */
 /* Program variables */
-const int intervalMs = 10 * 1000;
+const int intervalMs = 60 * 1000;
 
 //const char* host = "base.cplace.io";
 const char* url = "https://base.cplace.io/applicationStatus.txt";
@@ -46,14 +47,31 @@ void setup() {
 
 void loop() {
   lcd.clear();
-  if (isHealthy()) {
+  String currentDate = "2019-08-16";
+  O365CalendarEvent* event = o365_get_events(currentDate);
+  if (isBooked(event)) {
+    // Red LED ON
+    // Green LED OFF
     lcd.setCursor(0, 1);
-    lcd.print("Result: OK");
+    lcd.print("Booked until " + String(event->endTime).substring(0,5));
   } else {
+    // Red LED OFF
+    // Green LED ON
     lcd.setCursor(0, 1);
-    lcd.print("Result: DOWN!!!");
+    lcd.print("Next booking from " + String(event->startTime).substring(0,5) + " until " + String(event->endTime).substring(0,5));
   }
+//  if (isHealthy()) {
+//    lcd.setCursor(0, 1);
+//    lcd.print("Result: OK");
+//  } else {
+//    lcd.setCursor(0, 1);
+//    lcd.print("Result: DOWN!!!");
+//  }
   delay(intervalMs);
+}
+
+boolean isBooked(O365CalendarEvent* event) {
+  return false;
 }
 
 boolean isHealthy() {
