@@ -1,6 +1,8 @@
 #include <ESP8266WiFi.h>
 #include <WiFiClientSecure.h>
 
+#include "lcd.h"
+
 /* ==================== */
 /* WIFI Constants */
 #ifndef STASSID
@@ -15,17 +17,14 @@ const char* password = STAPSK;
 
 WiFiClientSecure __client;
 
-void wifi_connect(LiquidCrystal_I2C lcd) {
+void wifi_connect() {
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
-    lcd.setCursor(0, 1);
-    lcd.print("...");
+    lcd_print_bottom("...");
   }
-  lcd.setCursor(0, 1);
-  lcd.print("IP: ");
-  lcd.print(WiFi.localIP());
+  lcd_print_bottom(WiFi.localIP().toString());
 
   __client.setInsecure();
 }

@@ -1,27 +1,10 @@
-#include <LiquidCrystal_I2C.h>
-
 #include "http.h"
 #include "o365.h"
-
-/* ==================== */
-/* LCD Constants */
-#define LCD_ADDRESS 0x27
-#define LCD_COLS 16
-#define LCD_ROWS 2
-
-LiquidCrystal_I2C lcd(LCD_ADDRESS, LCD_COLS, LCD_ROWS);
-/* -- LCD Constants */
-/* ==================== */
-
+#include "lcd.h"
 
 /* ==================== */
 /* Program variables */
 const int intervalMs = 60 * 1000;
-
-//const char* host = "base.cplace.io";
-const char* url = "https://base.cplace.io/applicationStatus.txt";
-const char* expectedResult = "OK";
-const int httpsPort = 443;
 /* -- Program variables */
 /* ==================== */
 
@@ -30,81 +13,38 @@ void setup() {
   Serial.println();
 
   Serial.println("Initializing LCD...");
-  lcd.init();
+  lcd_init();
   Serial.println("Initialized...");
-  lcd.clear();
-  lcd.backlight();
 
-  lcd.setCursor(0, 0);
-  lcd.print("Init WIFI");
-  wifi_connect(lcd);
+  lcd_print_top("Init WIFI");
+  wifi_connect();
   delay(2000);
-  lcd.clear();
+  lcd_clear();
 
   o365_init();
   o365_refresh_token();
 }
 
 void loop() {
-  lcd.clear();
+  lcd_clear();
+  
   String currentDate = "2019-08-16";
   O365CalendarEvent* event = o365_get_events(currentDate);
   if (isBooked(event)) {
     // Red LED ON
     // Green LED OFF
-    lcd.setCursor(0, 1);
-    lcd.print("Booked until " + String(event->endTime).substring(0,5));
+    lcd_print_top("Booked until:");
+    lcd_print_bottom(String(event->endTime).substring(0,5));
   } else {
     // Red LED OFF
     // Green LED ON
-    lcd.setCursor(0, 1);
-    lcd.print("Next booking from " + String(event->startTime).substring(0,5) + " until " + String(event->endTime).substring(0,5));
+    lcd_print_top("Booked until:");
+    lcd_print_bottom(String(event->startTime).substring(0,5) + " - " + String(event->endTime).substring(0,5));
   }
-//  if (isHealthy()) {
-//    lcd.setCursor(0, 1);
-//    lcd.print("Result: OK");
-//  } else {
-//    lcd.setCursor(0, 1);
-//    lcd.print("Result: DOWN!!!");
-//  }
+
   delay(intervalMs);
 }
 
 boolean isBooked(O365CalendarEvent* event) {
   return false;
-}
-
-boolean isHealthy() {
-  lcd.setCursor(0, 0);
-  lcd.print("Checking...");
-
-//  WiFiClientSecure client = wifi_client();
-//
-//  if (!client.connect(host, httpsPort)) {
-//    lcd.setCursor(0, 0);
-//    lcd.print("Connection failed!");
-//    return false;
-//  }
-//
-//  client.print(String("GET ") + url + " HTTP/1.1\r\n" +
-//               "Host: " + host + "\r\n" + 
-//               "User-Agent: TheMakerLab\r\n" +
-//               "Connection: close\r\n\r\n");
-//
-//  while (client.connected()) {
-//    String line = client.readStringUntil('\n');
-//    if (line == "\r") {
-//      break;
-//    }
-//  }
-//
-//  String line = client.readStringUntil('\n');
-
-  HttpResponse* response;
-  response = http_get(url);
-
-  lcd.setCursor(0, 0);
-  lcd.print("Check completed.");
-  
-  return response->code == 200 && response->body == String("OK");
 }
