@@ -1,6 +1,7 @@
-#include "http.h"
-#include "o365.h"
-#include "lcd.h"
+#include "src/http.h"
+#include "src/o365.h"
+#include "src/lcd.h"
+#include "src/wifi.h"
 
 /* ==================== */
 /* Program variables */
@@ -30,7 +31,10 @@ void loop() {
   
   String currentDate = "2019-08-16";
   O365CalendarEvent* event = o365_get_events(currentDate);
-  if (isBooked(event)) {
+  if (event == NULL) {
+    lcd_print_top("FREE");
+    lcd_print_bottom("No events...");
+  } else if (isBooked(event)) {
     // Red LED ON
     // Green LED OFF
     lcd_print_top("Booked until:");
@@ -38,7 +42,7 @@ void loop() {
   } else {
     // Red LED OFF
     // Green LED ON
-    lcd_print_top("Booked until:");
+    lcd_print_top("Next event:");
     lcd_print_bottom(String(event->startTime).substring(0,5) + " - " + String(event->endTime).substring(0,5));
   }
 

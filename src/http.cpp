@@ -1,3 +1,5 @@
+#include "http.h"
+#include "wifi.h"
 
 HttpResponse __response;
 

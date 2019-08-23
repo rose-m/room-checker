@@ -1,4 +1,3 @@
-#include <EEPROM.h>
 #include <ArduinoJson.h>
 
 #include "http.h"
@@ -11,5 +10,11 @@ struct O365CalendarEvent {
   String startTime;
   String endTime;
 };
+
+void o365_init();
+
+void o365_refresh_token();
+
+O365CalendarEvent* o365_get_events(String currentDate);
 
 #endif

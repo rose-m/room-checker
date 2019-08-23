@@ -6,8 +6,8 @@
 /* ==================== */
 /* WIFI Constants */
 #ifndef STASSID
-#define STASSID "CF Guests"
-#define STAPSK  "CFwelcomesGuests"
+#define STASSID "MakerLab"
+#define STAPSK  "2889130479059627"
 #endif
 
 const char* ssid = STASSID;
