@@ -1,7 +1,7 @@
 #include <ESP8266WiFi.h>
 #include <WiFiClientSecure.h>
 
-#include "lcd.h"
+#include "oled.h"
 
 /* ==================== */
 /* WIFI Constants */
@@ -22,9 +22,9 @@ void wifi_connect() {
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
-    lcd_print_bottom("...");
+    oled_print_bottom("...");
   }
-  lcd_print_bottom(WiFi.localIP().toString());
+  oled_print_bottom(WiFi.localIP().toString());
 
   __client.setInsecure();
 }

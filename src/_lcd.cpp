@@ -1,4 +1,4 @@
-#include "lcd.h"
+#include "_lcd.h"
 
 LiquidCrystal_I2C __lcd(LCD_ADDRESS, LCD_COLS, LCD_ROWS);
 char __clearText[LCD_COLS];
