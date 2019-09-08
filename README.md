@@ -14,3 +14,4 @@ Flash and see what happens!
  - ArduinoJson: https://arduinojson.org
  - Adafruit_SSD1306: https://github.com/adafruit/Adafruit_SSD1306
  - Adafruit_GFX_Library: https://github.com/adafruit/Adafruit-GFX-Library
+ - TimeLib: https://github.com/PaulStoffregen/Time
