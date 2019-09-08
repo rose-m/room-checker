@@ -6,6 +6,8 @@
 void __read_from_serial(String prompt, char *ptr, uint8_t len);
 void __print_config();
 void __read_config_from_serial();
+bool __should_setup();
+void __do_setup();
 
 // Static OAuth Configuration Data
 struct ConfigData
@@ -31,25 +33,14 @@ boolean config_init()
 
     __print_config();
 
-    String data;
-    Serial.setTimeout(10000);
-    Serial.println("[CONFIG] Setup - press any character and Enter to setup (10s)...");
-    data = Serial.readStringUntil('\n');
-    if (data == "")
+    if (__should_setup())
     {
-        Serial.println("[CONFIG] Skipped setup...");
+        __do_setup();
     }
     else
     {
-        __read_config_from_serial();
-        __print_config();
-
-        EEPROM.put(0, __configData);
-        Serial.println("[CONFIG] Wrote settings to EEPROM...");
+        Serial.println("[CONFIG] All options set, no setup requested...");
     }
-    Serial.setTimeout(1000);
-
-    EEPROM.end();
 
     return true;
 }
@@ -93,11 +84,11 @@ void __read_from_serial(String prompt, char *ptr, uint8_t len)
 void __print_config()
 {
     Serial.println();
-    Serial.println("[CONFIG] config.tenantId:     " + String(__configData.tenantId));
-    Serial.println("[CONFIG] config.clientId:     " + String(__configData.clientId));
-    Serial.println("[CONFIG] config.clientSecret: " + String(__configData.clientSecret));
-    Serial.println("[CONFIG] config.resourceId:   " + String(__configData.resourceId));
-    Serial.println("[CONFIG] config.token:        " + String(__configData.token));
+    Serial.println("[CONFIG] config.tenantId:     " + config_get_option(TENANT_ID));
+    Serial.println("[CONFIG] config.clientId:     " + config_get_option(CLIENT_ID));
+    Serial.println("[CONFIG] config.clientSecret: " + config_get_option(CLIENT_SECRET));
+    Serial.println("[CONFIG] config.resourceId:   " + config_get_option(RESOURCE_ID));
+    Serial.println("[CONFIG] config.token:        " + config_get_option(TOKEN));
     Serial.println();
 }
 
@@ -107,4 +98,39 @@ void __read_config_from_serial()
     __read_from_serial("Enter CLIENT ID", __configData.clientId, 36);
     __read_from_serial("Enter CLIENT SECRET", __configData.clientSecret, 32);
     __read_from_serial("Enter RESOURCE ID", __configData.resourceId, 36);
+}
+
+bool __should_setup()
+{
+    // check for all options
+    bool optionMissing = config_get_option(TENANT_ID).length() != 36 || config_get_option(CLIENT_ID).length() != 36 || config_get_option(CLIENT_SECRET).length() != 32 || config_get_option(RESOURCE_ID).length() != 36;
+
+    // TODO check for "reset" interupt?
+
+    return optionMissing;
+}
+
+void __do_setup()
+{
+    String data;
+    Serial.setTimeout(10000);
+    Serial.println("[CONFIG] Setup - press any character and Enter to setup (10s)...");
+    data = Serial.readStringUntil('\n');
+
+    if (data == "")
+    {
+        Serial.println("[CONFIG] Skipped setup...");
+    }
+    else
+    {
+        __read_config_from_serial();
+        __print_config();
+
+        EEPROM.put(0, __configData);
+        Serial.println("[CONFIG] Wrote settings to EEPROM...");
+    }
+
+    Serial.setTimeout(1000);
+
+    EEPROM.end();
 }
