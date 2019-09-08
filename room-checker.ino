@@ -1,12 +1,23 @@
 #include "src/config.h"
 #include "src/http.h"
+#include "src/time.h"
 #include "src/o365.h"
 #include "src/oled.h"
 #include "src/wifi.h"
 
 /* ==================== */
+/* Forward declarations */
+/* ==================== */
+boolean __should_sleep_at_night();
+/* ==================== */
+/* -- Forward declarations */
+/* ==================== */
+
+/* ==================== */
 /* Program variables */
-const int intervalMs = 60 * 1000;
+const int INTERVAL_MS = 60 * 1000;
+const uint64 SLEEP_AT_NIGHT = 60 * 60e6; // 60 Minutes
+const uint64 SLEEP_AT_DAY = 5 * 60e6;    // 5 Minutes
 /* -- Program variables */
 /* ==================== */
 
@@ -24,23 +35,43 @@ void setup()
   // 7. Update Display
 
   Serial.begin(115200);
-  Serial.println();
+  while (!Serial)
+  {
+    // Wait for initialization
+  }
 
   config_init();
-
   oled_init();
-
   wifi_connect();
 
   delay(2000);
   oled_clear();
 
+  Time time = time_update();
+  if (__should_sleep_at_night(time))
+  {
+    // nothing to happen anymore
+    ESP.deepSleep(SLEEP_AT_NIGHT);
+    return;
+  }
+
+  // We now know o365 work is required - let the loop do the rest
   o365_init();
-  o365_refresh_token();
 }
 
 void loop()
 {
+  TokenData tokenData = config_get_token();
+  if (tokenData.validUntilEpoch < time_get().epoch)
+  {
+    TokenData *newtokenData = o365_refresh_token();
+    config_update_token(newtokenData);
+  }
+
+  ESP.deepSleep(SLEEP_AT_DAY);
+
+  // TODO: CONTINUE.......
+
   oled_clear();
 
   String currentDate = "2019-08-16";
@@ -65,10 +96,15 @@ void loop()
     oled_print_bottom(String(event->startTime).substring(0, 5) + " - " + String(event->endTime).substring(0, 5));
   }
 
-  delay(intervalMs);
+  delay(INTERVAL_MS);
 }
 
 boolean isBooked(O365CalendarEvent *event)
 {
   return false;
+}
+
+boolean __should_sleep_at_night(Time time)
+{
+  return time.hour > 20 || time.hour < 6;
 }

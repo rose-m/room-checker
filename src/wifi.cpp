@@ -1,6 +1,4 @@
-#include <ESP8266WiFi.h>
-#include <WiFiClientSecure.h>
-
+#include "wifi.h"
 #include "oled.h"
 
 /* ==================== */

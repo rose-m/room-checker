@@ -1,13 +1,10 @@
 #include "o365.h"
-#include "config.h"
+#include "time.h"
 
 O365CalendarEvent __o365CalendarEvent;
 
 // Base URL for requests
 String graphBaseUrl = "https://graph.microsoft.com/v1.0/";
-
-// OAuth token to use - populated by refresh
-String token;
 
 // Workday times - HH:mm
 String workDayStart = "08:00";
@@ -41,7 +38,7 @@ void o365_init()
   Serial.println("[O365] Initializing...");
 }
 
-void o365_refresh_token()
+TokenData* o365_refresh_token()
 {
   String tenant = config_get_option(TENANT_ID);
   String tokenUrl = "https://login.microsoftonline.com/" + tenant + "/oauth2/v2.0/token";
@@ -56,23 +53,31 @@ void o365_refresh_token()
 
   if (response->code == 200)
   {
-    size_t capacity = JSON_OBJECT_SIZE(4) + 1398 + 50;
+    size_t capacity = JSON_OBJECT_SIZE(4) + 1500 + 50;
     DynamicJsonDocument doc(capacity);
 
     deserializeJson(doc, response->body);
-    token = doc["access_token"].as<String>();
-    Serial.println("[O365] Got token: " + token);
+
+    String token = doc["access_token"].as<String>();
+    int expiresIn = doc["expires_in"].as<int>();
+    Serial.println("[O365] Got token: " + token + ", expires in: " + String(expiresIn));
+
+    TokenData tokenData;
+    tokenData.token = token;
+    tokenData.validUntilEpoch = time_get().epoch + expiresIn - 30; // we subtract 30 seconds for good measure
+    return &tokenData;
   }
   else
   {
     Serial.println("[O365] Failed to accquire token...");
+    return NULL;
   }
 }
 
 O365CalendarEvent *o365_get_events(String currentDate)
 {
   String headers[3][2] = {
-      {"Authorization", "Bearer " + String(token)},
+      {"Authorization", "Bearer " + config_get_option(TOKEN)},
       {"Content-Type", "application/json"},
       {"Prefer", "outlook.timezone=\"Europe/Berlin\""}};
 

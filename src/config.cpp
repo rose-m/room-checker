@@ -8,6 +8,7 @@ void __print_config();
 void __read_config_from_serial();
 bool __should_setup();
 void __do_setup();
+void __write_config();
 
 // Static OAuth Configuration Data
 struct ConfigData
@@ -23,6 +24,7 @@ struct ConfigData
    * We want to have some safety
    */
     char token[1500];
+    time_t validUntilEpoch;
 
 } __configData;
 
@@ -30,6 +32,7 @@ boolean config_init()
 {
     EEPROM.begin(sizeof(__configData));
     EEPROM.get(0, __configData);
+    EEPROM.end();
 
     __print_config();
 
@@ -73,6 +76,21 @@ String config_get_option(ConfigOption option)
     return String(value);
 }
 
+TokenData config_get_token()
+{
+    TokenData data;
+    data.token = config_get_option(TOKEN);
+    data.validUntilEpoch = __configData.validUntilEpoch;
+    return data;
+}
+
+void config_update_token(TokenData *newTokenData)
+{
+    newTokenData->token.toCharArray(__configData.token, sizeof(__configData.token));
+    __configData.validUntilEpoch = newTokenData->validUntilEpoch;
+    __write_config();
+}
+
 void __read_from_serial(String prompt, char *ptr, uint8_t len)
 {
     Serial.println("[CONFIG] " + prompt + ":");
@@ -84,11 +102,12 @@ void __read_from_serial(String prompt, char *ptr, uint8_t len)
 void __print_config()
 {
     Serial.println();
-    Serial.println("[CONFIG] config.tenantId:     " + config_get_option(TENANT_ID));
-    Serial.println("[CONFIG] config.clientId:     " + config_get_option(CLIENT_ID));
-    Serial.println("[CONFIG] config.clientSecret: " + config_get_option(CLIENT_SECRET));
-    Serial.println("[CONFIG] config.resourceId:   " + config_get_option(RESOURCE_ID));
-    Serial.println("[CONFIG] config.token:        " + config_get_option(TOKEN));
+    Serial.println("[CONFIG] config.tenantId:        " + config_get_option(TENANT_ID));
+    Serial.println("[CONFIG] config.clientId:        " + config_get_option(CLIENT_ID));
+    Serial.println("[CONFIG] config.clientSecret:    " + config_get_option(CLIENT_SECRET));
+    Serial.println("[CONFIG] config.resourceId:      " + config_get_option(RESOURCE_ID));
+    Serial.println("[CONFIG] config.token:           " + config_get_option(TOKEN));
+    Serial.println("[CONFIG] config.validUntilEpoch: " + String(__configData.validUntilEpoch));
     Serial.println();
 }
 
@@ -125,12 +144,15 @@ void __do_setup()
     {
         __read_config_from_serial();
         __print_config();
-
-        EEPROM.put(0, __configData);
-        Serial.println("[CONFIG] Wrote settings to EEPROM...");
     }
 
     Serial.setTimeout(1000);
+}
 
+void __write_config()
+{
+    EEPROM.begin(sizeof(__configData));
+    EEPROM.put(0, __configData);
     EEPROM.end();
+    Serial.println("[CONFIG] Wrote settings to EEPROM...");
 }

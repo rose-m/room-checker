@@ -1,5 +1,6 @@
 #include <ArduinoJson.h>
 
+#include "config.h"
 #include "http.h"
 
 #ifndef O365_H_
@@ -13,7 +14,7 @@ struct O365CalendarEvent {
 
 void o365_init();
 
-void o365_refresh_token();
+TokenData* o365_refresh_token();
 
 O365CalendarEvent* o365_get_events(String currentDate);
 
