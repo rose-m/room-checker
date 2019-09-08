@@ -1,3 +1,4 @@
+#include "src/config.h"
 #include "src/http.h"
 #include "src/o365.h"
 #include "src/oled.h"
@@ -11,15 +12,26 @@ const int intervalMs = 60 * 1000;
 
 void setup()
 {
+  // General power-saving flow:
+  // 1. Check for Setup needs
+  // 2. Initialize OLED
+  // 3. Initialize WiFi
+  // 4. Update Time?
+  //  4a. If at night, sleep again
+  // 5. Check Token validity
+  //  5a. Update Token
+  // 6. Check for next meetings
+  // 7. Update Display
+
   Serial.begin(115200);
   Serial.println();
 
-  Serial.println("Initializing OLED...");
-  oled_init();
-  Serial.println("Initialized...");
+  config_init();
 
-  oled_print_top("Init WIFI");
+  oled_init();
+
   wifi_connect();
+
   delay(2000);
   oled_clear();
 
