@@ -37,11 +37,13 @@ Time time_update()
         }
         else
         {
+            __time.epoch = -1;
             Serial.println("[TIME] Expected 8 characters repsonse, got body: " + epochMinutes);
         }
     }
     else
     {
+        __time.epoch = -1;
         Serial.println("[TIME] Failed to update time, HTTP response code: " + String(response->code));
     }
 
@@ -57,5 +59,5 @@ void __print_time()
     sprintf(data, "%02d:%02d", __time.hour, __time.minute);
     String time = String(__time.hour) + ":" + String(__time.minute);
 
-    Serial.println("[TIME] Current time: " + year());
+    Serial.println("[TIME] Current time: " + date + " - " + time);
 }

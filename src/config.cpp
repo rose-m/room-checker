@@ -20,9 +20,9 @@ struct ConfigData
     char resourceId[37];
 
     /**
-   * The typical access token seems to be 1340 characters long
-   * We want to have some safety
-   */
+     * The typical access token seems to be 1340 characters long
+     * We want to have some safety
+     */
     char token[1500];
     time_t validUntilEpoch;
 

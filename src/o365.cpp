@@ -62,10 +62,10 @@ TokenData* o365_refresh_token()
     int expiresIn = doc["expires_in"].as<int>();
     Serial.println("[O365] Got token: " + token + ", expires in: " + String(expiresIn));
 
-    TokenData tokenData;
-    tokenData.token = token;
-    tokenData.validUntilEpoch = time_get().epoch + expiresIn - 30; // we subtract 30 seconds for good measure
-    return &tokenData;
+    TokenData *tokenData = new TokenData();
+    tokenData->token = token;
+    tokenData->validUntilEpoch = time_get().epoch + expiresIn - 30; // we subtract 30 seconds for good measure
+    return tokenData;
   }
   else
   {

@@ -6,7 +6,7 @@
 struct Time {
     uint8 day;
     uint8 month;
-    uint8 year;
+    uint16 year;
     uint8 hour;
     uint8 minute;
     time_t epoch;
