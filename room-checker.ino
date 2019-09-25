@@ -51,7 +51,7 @@ void setup()
   Time time;
   do {
     time = time_update();
-    delay(1000);
+    delay(5000);
   } while (time.epoch < 0);
 
   if (__should_sleep_at_night(time))

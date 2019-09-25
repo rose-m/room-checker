@@ -13,11 +13,14 @@ HttpResponse* http_get(String url, String headers[][2], uint8_t len) {
       String *h = headers[i];
       https.addHeader(h[0], h[1]);
     }
+
     __response.code = https.GET();
     Serial.println("[HTTP] GET " + url + " - " + __response.code);
 
     if (__response.code > 0) {
       __response.body = https.getString();
+    } else {
+      Serial.println("[HTTP] Failure: " + https.errorToString(__response.code));
     }
     
     https.end();
@@ -44,6 +47,8 @@ HttpResponse* http_post(String url, String body, String headers[][2], uint8_t le
     Serial.println("[HTTP] POST " + url + " - " + __response.code);
     if (__response.code > 0) {
       __response.body = https.getString();
+    } else {
+      Serial.println("[HTTP] Failure: " + https.errorToString(__response.code));
     }
     
     https.end();

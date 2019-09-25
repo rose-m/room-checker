@@ -3,10 +3,11 @@
 #include "time.h"
 #include "http.h"
 
-const String TIME_URL = "https://currentmillis.com/time/minutes-since-unix-epoch.php";
+const String TIME_URL = "https://worldtimeapi.org/api/timezone/Europe/Berlin.txt";
 
 // Forward declarations
 void __print_time();
+String __extract_response_field(String fieldName, String data);
 
 Time __time;
 
@@ -22,10 +23,24 @@ Time time_update()
     HttpResponse *response = http_get(TIME_URL);
     if (response->code == 200)
     {
-        String epochMinutes = response->body;
-        if (epochMinutes.length() == 8)
+        String data = response->body;
+        String epochSeconds = __extract_response_field("unixtime", data);
+        if (epochSeconds.length() == 10)
         {
-            time_t epochTime = epochMinutes.toInt() * 60;
+            time_t epochTime = epochSeconds.toInt();
+            
+            String utcOffset = __extract_response_field("utc_offset", data);
+            boolean shouldAdd = utcOffset.charAt(0) == '+';
+            uint8 utcHoursOffset = utcOffset.substring(1, 3).toInt();
+            uint8 utcMinutesOffset = utcOffset.substring(4).toInt();
+            int totalOffset = 60 * (60 * utcHoursOffset + utcMinutesOffset);
+
+            if (shouldAdd) {
+                epochTime += totalOffset;
+            } else {
+                epochTime -= totalOffset;
+            }
+
             setTime(epochTime);
             __time.year = year();
             __time.month = month();
@@ -38,7 +53,7 @@ Time time_update()
         else
         {
             __time.epoch = -1;
-            Serial.println("[TIME] Expected 8 characters repsonse, got body: " + epochMinutes);
+            Serial.println("[TIME] Expected 10 characters repsonse, got body: " + data);
         }
     }
     else
@@ -60,4 +75,12 @@ void __print_time()
     String time = String(__time.hour) + ":" + String(__time.minute);
 
     Serial.println("[TIME] Current time: " + date + " - " + time);
+}
+
+String __extract_response_field(String fieldName, String data)
+{
+    int lineStart = data.indexOf(fieldName);
+    int beginTimestamp = lineStart + fieldName.length() + 2;
+    int endTimestamp = data.indexOf('\n', beginTimestamp);
+    return data.substring(beginTimestamp, endTimestamp);
 }

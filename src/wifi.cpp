@@ -25,7 +25,9 @@ void wifi_connect() {
     oled_print_bottom("...");
   }
 
-  oled_print_bottom(WiFi.localIP().toString());
+  String ip = WiFi.localIP().toString();
+  Serial.println("[WIFI] IP: " + ip);
+  oled_print_bottom(ip);
 
   __client.setInsecure();
 }
