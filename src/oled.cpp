@@ -36,8 +36,9 @@ void __print_text()
     __oled.clearDisplay();
     __oled.setTextSize(1);
     __oled.setTextColor(WHITE);
-    __oled.setCursor(0, 5);
+    __oled.setCursor(0, 0);
     __oled.println(__textTop);
+    __oled.setCursor(0, 15);
     __oled.println(__textBottom);
     __oled.display();
 }

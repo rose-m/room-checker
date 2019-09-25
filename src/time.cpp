@@ -6,7 +6,6 @@
 const String TIME_URL = "https://worldtimeapi.org/api/timezone/Europe/Berlin.txt";
 
 // Forward declarations
-void __print_time();
 String __extract_response_field(String fieldName, String data);
 
 Time __time;
@@ -28,16 +27,19 @@ Time time_update()
         if (epochSeconds.length() == 10)
         {
             time_t epochTime = epochSeconds.toInt();
-            
+
             String utcOffset = __extract_response_field("utc_offset", data);
             boolean shouldAdd = utcOffset.charAt(0) == '+';
             uint8 utcHoursOffset = utcOffset.substring(1, 3).toInt();
             uint8 utcMinutesOffset = utcOffset.substring(4).toInt();
             int totalOffset = 60 * (60 * utcHoursOffset + utcMinutesOffset);
 
-            if (shouldAdd) {
+            if (shouldAdd)
+            {
                 epochTime += totalOffset;
-            } else {
+            }
+            else
+            {
                 epochTime -= totalOffset;
             }
 
@@ -48,7 +50,7 @@ Time time_update()
             __time.hour = hour();
             __time.minute = minute();
             __time.epoch = epochTime;
-            __print_time();
+            Serial.println("[TIME] Current time: " + time_to_datetime_string());
         }
         else
         {
@@ -65,16 +67,23 @@ Time time_update()
     return __time;
 }
 
-void __print_time()
+String time_to_datetime_string()
+{
+    return time_to_date_string() + "T" + time_to_time_string();
+}
+
+String time_to_time_string()
+{
+    char data[5];
+    sprintf(data, "%02d:%02d", __time.hour, __time.minute);
+    return String(data);
+}
+
+String time_to_date_string()
 {
     char data[10];
     sprintf(data, "%04d-%02d-%02d", __time.year, __time.month, __time.day);
-    String date = String(data);
-
-    sprintf(data, "%02d:%02d", __time.hour, __time.minute);
-    String time = String(__time.hour) + ":" + String(__time.minute);
-
-    Serial.println("[TIME] Current time: " + date + " - " + time);
+    return String(data);
 }
 
 String __extract_response_field(String fieldName, String data)

@@ -16,4 +16,10 @@ Time time_get();
 
 Time time_update();
 
+String time_to_datetime_string();
+
+String time_to_time_string();
+
+String time_to_date_string();
+
 #endif

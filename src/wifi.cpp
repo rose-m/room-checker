@@ -28,6 +28,7 @@ void wifi_connect() {
   String ip = WiFi.localIP().toString();
   Serial.println("[WIFI] IP: " + ip);
   oled_print_bottom(ip);
+  delay(2000);
 
   __client.setInsecure();
 }

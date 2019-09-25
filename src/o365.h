@@ -16,6 +16,6 @@ void o365_init();
 
 TokenData* o365_refresh_token();
 
-O365CalendarEvent* o365_get_events(String currentDate);
+O365CalendarEvent* o365_get_events();
 
 #endif

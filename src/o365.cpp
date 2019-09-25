@@ -1,15 +1,10 @@
 #include "o365.h"
 #include "time.h"
 
-O365CalendarEvent __o365CalendarEvent;
-
 // Base URL for requests
-String graphBaseUrl = "https://graph.microsoft.com/v1.0/";
-
-// Workday times - HH:mm
-String workDayStart = "08:00";
-String workDayEnd = "20:00";
-String maxEvents = "2";
+const String GRAPH_BASE_URL = "https://graph.microsoft.com/v1.0/";
+const String WORKDAY_END_TIME = "20:00";
+const String MAX_EVENTS = "2";
 
 // Static computation for /events JSON Body
 size_t eventsBodyCapacity = JSON_ARRAY_SIZE(1) + 2 * JSON_OBJECT_SIZE(1) + JSON_OBJECT_SIZE(3) + 200;
@@ -74,20 +69,23 @@ TokenData* o365_refresh_token()
   }
 }
 
-O365CalendarEvent *o365_get_events(String currentDate)
+O365CalendarEvent* o365_get_events()
 {
   String headers[3][2] = {
       {"Authorization", "Bearer " + config_get_option(TOKEN)},
       {"Content-Type", "application/json"},
       {"Prefer", "outlook.timezone=\"Europe/Berlin\""}};
 
-  String baseUrl = graphBaseUrl + "users/" + config_get_option(RESOURCE_ID) + "/calendar/events";
+  String baseUrl = GRAPH_BASE_URL + "users/" + config_get_option(RESOURCE_ID) + "/calendar/events";
+
+  String currentDateTime = time_to_datetime_string();
 
   // Query-parameters: https://docs.microsoft.com/en-us/graph/query-parameters
   String query = "$select=start,end,organizer" +
                  String("&$orderby=start/dateTime%20asc") +
-                 "&$top=" + maxEvents +
-                 "&$filter=start/dateTime%20ge%20'" + currentDate + "T" + workDayStart + "'%20and%20end/dateTime%20lt%20'" + currentDate + "T" + workDayEnd + "'";
+                 "&$top=" + MAX_EVENTS +
+                 "&$filter=(start/dateTime%20lt%20'" + currentDateTime + "'%20and%20end/dateTime%20ge%20'" + currentDateTime + "')" +
+                 "%20or%20(start/dateTime%20ge%20'" + currentDateTime + "'%20and%20start/dateTime%20lt%20'" + time_to_date_string() + "T23:59')";
 
   String APIUrl = baseUrl + String("?") + query;
 
@@ -106,15 +104,17 @@ O365CalendarEvent *o365_get_events(String currentDate)
     if (len > 0)
     {
       JsonObject meeting_0 = doc["value"][0];
-      __o365CalendarEvent.startTime = __split_value(meeting_0["start"]["dateTime"].as<String>(), 'T', 1);
-      __o365CalendarEvent.endTime = __split_value(meeting_0["end"]["dateTime"].as<String>(), 'T', 1);
-      __o365CalendarEvent.organiser = meeting_0["organizer"]["emailAddress"]["name"].as<String>();
-      Serial.println("[O365] First meeting " + String(__o365CalendarEvent.startTime) + " to " + String(__o365CalendarEvent.endTime) + " organised by " + String(__o365CalendarEvent.organiser));
+      O365CalendarEvent* event = new O365CalendarEvent();
+      event->startTime = __split_value(meeting_0["start"]["dateTime"].as<String>(), 'T', 1).substring(0, 5);
+      event->endTime = __split_value(meeting_0["end"]["dateTime"].as<String>(), 'T', 1).substring(0, 5);
+      event->organiser = meeting_0["organizer"]["emailAddress"]["name"].as<String>();
+      Serial.println("[O365] First meeting " + String(event->startTime) + " to " + String(event->endTime) + " organised by " + String(event->organiser));
+      return event;
     }
   }
   else
   {
     Serial.println("[O365] Failed to accquire meeting update...");
   }
-  return &__o365CalendarEvent;
+  return NULL;
 }

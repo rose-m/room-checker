@@ -15,9 +15,9 @@ boolean __should_sleep_at_night();
 
 /* ==================== */
 /* Program variables */
-const int INTERVAL_MS = 60 * 1000;
+const int INTERVAL_MS = 10 * 1000;
 const uint64 SLEEP_AT_NIGHT = 60 * 60e6; // 60 Minutes
-const uint64 SLEEP_AT_DAY = 10e6;    // 10 seconds
+const uint64 SLEEP_AT_DAY = 10e6;        // 10 seconds
 //const uint64 SLEEP_AT_DAY = 5 * 60e6;    // 5 Minutes
 /* -- Program variables */
 /* ==================== */
@@ -49,7 +49,8 @@ void setup()
   oled_clear();
 
   Time time;
-  do {
+  do
+  {
     time = time_update();
     delay(5000);
   } while (time.epoch < 0);
@@ -76,46 +77,48 @@ void loop()
     delete newTokenData;
   }
 
-  oled_print_top("Hello");
-  oled_print_bottom("Vincent!");
-
-  Serial.println("[MAIN] Time to sleep...");
-  delay(10000);
-  return;
+  //Serial.println("[MAIN] Time to sleep...");
+  //delay(10000);
+  //return;
   //ESP.deepSleep(SLEEP_AT_DAY);
 
   // TODO: CONTINUE.......
 
-  oled_clear();
-
-  String currentDate = "2019-08-16";
-  O365CalendarEvent *event = o365_get_events(currentDate);
+  O365CalendarEvent *event = o365_get_events();
   if (event == NULL)
   {
     oled_print_top("FREE");
-    oled_print_bottom("No events...");
-  }
-  else if (isBooked(event))
-  {
-    // Red LED ON
-    // Green LED OFF
-    oled_print_top("Booked until:");
-    oled_print_bottom(String(event->endTime).substring(0, 5));
+    oled_print_bottom("No bookings...");
   }
   else
   {
-    // Red LED OFF
-    // Green LED ON
-    oled_print_top("Next event:");
-    oled_print_bottom(String(event->startTime).substring(0, 5) + " - " + String(event->endTime).substring(0, 5));
+    if (__is_booked(event))
+    {
+      // Red LED ON
+      // Green LED OFF
+      oled_print_top("Booked until:");
+      oled_print_bottom(String(event->endTime));
+    }
+    else
+    {
+      // Red LED OFF
+      // Green LED ON
+      oled_print_top("Next booking:");
+      oled_print_bottom(String(event->startTime) + " - " + String(event->endTime));
+    }
+
+    delete event;
   }
 
   delay(INTERVAL_MS);
 }
 
-boolean isBooked(O365CalendarEvent *event)
+boolean __is_booked(O365CalendarEvent *event)
 {
-  return false;
+  int startHour = event->startTime.substring(0, 2).toInt();
+  int startMinute = event->startTime.substring(3, 5).toInt();
+  Time t = time_get();
+  return startHour < t.hour || (startHour == t.hour && startMinute <= t.minute);
 }
 
 boolean __should_sleep_at_night(Time time)
