@@ -19,6 +19,9 @@ const int INTERVAL_MS = 10 * 1000;
 const uint64 SLEEP_AT_NIGHT = 60 * 60e6; // 60 Minutes
 const uint64 SLEEP_AT_DAY = 10e6;        // 10 seconds
 //const uint64 SLEEP_AT_DAY = 5 * 60e6;    // 5 Minutes
+
+const uint8 PIN_LED_RED = D8;
+const uint8 PIN_LED_GREEN = D7;
 /* -- Program variables */
 /* ==================== */
 
@@ -40,6 +43,11 @@ void setup()
   {
     // Wait for initialization
   }
+
+  pinMode(PIN_LED_GREEN, OUTPUT);
+  pinMode(PIN_LED_RED, OUTPUT);
+  digitalWrite(PIN_LED_GREEN, LOW);
+  digitalWrite(PIN_LED_RED, LOW);
 
   config_init();
   oled_init();
@@ -87,6 +95,11 @@ void loop()
   O365CalendarEvent *event = o365_get_events();
   if (event == NULL)
   {
+    // Red LED OFF
+    digitalWrite(PIN_LED_RED, LOW);
+    // Green LED ON
+    digitalWrite(PIN_LED_GREEN, HIGH);
+
     oled_print_top("FREE");
     oled_print_bottom("No bookings...");
   }
@@ -95,14 +108,20 @@ void loop()
     if (__is_booked(event))
     {
       // Red LED ON
+      digitalWrite(PIN_LED_RED, HIGH);
       // Green LED OFF
+      digitalWrite(PIN_LED_GREEN, LOW);
+
       oled_print_top("Booked until:");
       oled_print_bottom(String(event->endTime));
     }
     else
     {
       // Red LED OFF
+      digitalWrite(PIN_LED_RED, LOW);
       // Green LED ON
+      digitalWrite(PIN_LED_GREEN, HIGH);
+
       oled_print_top("Next booking:");
       oled_print_bottom(String(event->startTime) + " - " + String(event->endTime));
     }
